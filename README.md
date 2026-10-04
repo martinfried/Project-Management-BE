@@ -6,8 +6,8 @@ Robust REST API backend for managing projects, persons, and teams, built with **
 
 ## 🌟 Key Features
 
-- **Project Management (CRUD)**: Name, description, status (*Planned / In Progress / Completed / On Hold*), start and end dates.
-- **Person Management (CRUD)**: Name, validated unique email, role (*Developer, Analyst, Project Lead, etc.*), team and project assignments.
+- **Project Management (CRUD)**: Name, description, status (_Planned / In Progress / Completed / On Hold_), start and end dates.
+- **Person Management (CRUD)**: Name, validated unique email, role (_Developer, Analyst, Project Lead, etc._), team and project assignments.
 - **Team Concept (Bonus)**: Create and manage working teams, associate persons to teams (1:N), assign teams to projects (M:N).
 - **Participant Aggregation**: Automatically calculates all unique project participants (directly assigned persons + members of assigned teams).
 - **Data Integrity & Cascades**: Safe entity removal with automatic relationship cleanup.
@@ -114,21 +114,24 @@ php -S 0.0.0.0:8000 -t public
 ## 📡 REST API Endpoints Overview
 
 ### System & Health
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/api/health` | Health check and record counts |
+
+| Method | Endpoint             | Description                          |
+| ------ | -------------------- | ------------------------------------ |
+| `GET`  | `/api/health`        | Health check and record counts       |
 | `POST` | `/api/database/init` | Schema creation and sample data seed |
-| `GET` | `/api/doc` | Swagger UI documentation |
-| `GET` | `/api/doc.json` | Raw OpenAPI 3.0 specification |
+| `GET`  | `/api/doc`           | Swagger UI documentation             |
+| `GET`  | `/api/doc.json`      | Raw OpenAPI 3.0 specification        |
 
 ---
 
 ### Projects (`/api/projects`)
 
 #### `GET /api/projects`
+
 List all projects. Supports query parameters `?search=portal` and `?status=In%20Progress`.
 
 **Sample Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -151,12 +154,15 @@ List all projects. Supports query parameters `?search=portal` and `?status=In%20
 ```
 
 #### `GET /api/projects/{id}`
+
 Project detail including directly assigned persons, teams, and deduplicated allParticipants.
 
 #### `POST /api/projects`
+
 Create a new project.
 
 **Sample Request:**
+
 ```json
 {
   "name": "Security Audit & Infrastructure Hardening",
@@ -170,15 +176,19 @@ Create a new project.
 ```
 
 #### `PUT /api/projects/{id}`
+
 Update an existing project and its person/team assignments.
 
 #### `DELETE /api/projects/{id}`
+
 Delete a project (safely removes relationship records).
 
 #### `POST /api/projects/{id}/persons/{personId}` / `DELETE /api/projects/{id}/persons/{personId}`
+
 Assign or remove a direct person assignment.
 
 #### `POST /api/projects/{id}/teams/{teamId}` / `DELETE /api/projects/{id}/teams/{teamId}`
+
 Assign or remove a team assignment.
 
 ---
@@ -186,15 +196,19 @@ Assign or remove a team assignment.
 ### Persons (`/api/persons`)
 
 #### `GET /api/persons`
+
 List persons. Supports `?search=john`, `?role=Developer`, `?teamId=1`.
 
 #### `GET /api/persons/{id}`
+
 Person detail including team and assigned projects.
 
 #### `POST /api/persons`
+
 Create a new person.
 
 **Sample Request:**
+
 ```json
 {
   "name": "Lucas Miller",
@@ -206,9 +220,11 @@ Create a new person.
 ```
 
 #### `PUT /api/persons/{id}`
+
 Update person profile.
 
 #### `DELETE /api/persons/{id}`
+
 Delete person (unlinks from projects and teams).
 
 ---
@@ -216,12 +232,15 @@ Delete person (unlinks from projects and teams).
 ### Teams (`/api/teams`)
 
 #### `GET /api/teams`
+
 List all teams with member counts. Supports `?search=Core`.
 
 #### `GET /api/teams/{id}`
+
 Team detail including members and assigned projects.
 
 #### `POST /api/teams`
+
 Create a team.
 
 ```json
@@ -233,7 +252,9 @@ Create a team.
 ```
 
 #### `PUT /api/teams/{id}`
+
 Update team name, description, or member assignments.
 
 #### `DELETE /api/teams/{id}`
+
 Delete team (unlinks members without deleting person records).
