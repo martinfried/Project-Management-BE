@@ -1,0 +1,21 @@
+###> symfony/framework-bundle ###
+/.env.local
+/.env.local.php
+/.env.*.local
+/config/secrets/prod/prod.decrypt.private.php
+/public/bundles/
+/var/*
+!/var/.gitkeep
+/vendor/
+###< symfony/framework-bundle ###
+
+###> doctrine/doctrine-bundle ###
+*.db
+*.sqlite
+###< doctrine/doctrine-bundle ###
+
+# IDE & OS
+.DS_Store
+.idea/
+.vscode/
+*.log

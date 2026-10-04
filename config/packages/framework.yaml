@@ -1,0 +1,19 @@
+framework:
+    secret: '%env(APP_SECRET)%'
+    http_method_override: false
+    handle_all_throwables: true
+
+    php_errors:
+        log: true
+
+    serializer:
+        enabled: true
+        mapping:
+            paths: ['%kernel.project_dir%/config/serializer']
+
+    validation:
+        email_validation_mode: html5
+
+when@test:
+    framework:
+        test: true
