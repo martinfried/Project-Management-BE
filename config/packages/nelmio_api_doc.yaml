@@ -1,0 +1,444 @@
+nelmio_api_doc:
+  documentation:
+    openapi: 3.0.0
+    info:
+      title: "Project & Team Management REST API"
+      description: "Comprehensive OpenAPI 3.0 specification and REST API for project, team, and person management"
+      version: "1.0.0"
+    components:
+      schemas:
+        ProjectStatus:
+          type: string
+          enum: ["Planned", "In Progress", "Completed", "On Hold"]
+          example: "In Progress"
+
+        TeamSimple:
+          type: object
+          required: [id, name]
+          properties:
+            id:
+              type: integer
+              example: 1
+            name:
+              type: string
+              example: "Core Platform Team"
+            membersCount:
+              type: integer
+              example: 4
+
+        PersonSimple:
+          type: object
+          required: [id, name, email, role]
+          properties:
+            id:
+              type: integer
+              example: 1
+            name:
+              type: string
+              example: "John Smith"
+            email:
+              type: string
+              format: email
+              example: "john.smith@example.com"
+            role:
+              type: string
+              example: "Project Lead"
+            team:
+              allOf:
+                - $ref: "#/components/schemas/TeamSimple"
+              nullable: true
+
+        ProjectSimple:
+          type: object
+          required:
+            [
+              id,
+              name,
+              status,
+              directPersonsCount,
+              teamsCount,
+              totalParticipantsCount,
+              createdAt,
+            ]
+          properties:
+            id:
+              type: integer
+              example: 1
+            name:
+              type: string
+              example: "Information Portal & Data Warehouse"
+            description:
+              type: string
+              nullable: true
+              example: "Comprehensive modernization of internal project reporting and data lakes"
+            status:
+              $ref: "#/components/schemas/ProjectStatus"
+            startDate:
+              type: string
+              format: date
+              nullable: true
+              example: "2026-01-15"
+            endDate:
+              type: string
+              format: date
+              nullable: true
+              example: "2026-12-31"
+            directPersonsCount:
+              type: integer
+              example: 2
+            teamsCount:
+              type: integer
+              example: 2
+            totalParticipantsCount:
+              type: integer
+              example: 5
+            createdAt:
+              type: string
+              format: date-time
+              example: "2026-10-03T12:00:00+00:00"
+
+        Participant:
+          type: object
+          required: [id, name, email, role, assignmentType]
+          properties:
+            id:
+              type: integer
+              example: 1
+            name:
+              type: string
+              example: "John Smith"
+            email:
+              type: string
+              format: email
+              example: "john.smith@example.com"
+            role:
+              type: string
+              example: "Project Lead"
+            assignmentType:
+              type: string
+              enum: [direct, team, both]
+              example: "both"
+            team:
+              allOf:
+                - $ref: "#/components/schemas/TeamSimple"
+              nullable: true
+            viaTeam:
+              allOf:
+                - $ref: "#/components/schemas/TeamSimple"
+              nullable: true
+
+        ProjectDetail:
+          allOf:
+            - $ref: "#/components/schemas/ProjectSimple"
+            - type: object
+              required: [persons, teams, allParticipants]
+              properties:
+                persons:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/PersonSimple"
+                teams:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/TeamSimple"
+                allParticipants:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/Participant"
+
+        PersonDetail:
+          allOf:
+            - $ref: "#/components/schemas/PersonSimple"
+            - type: object
+              required: [projectsCount, createdAt]
+              properties:
+                projectsCount:
+                  type: integer
+                  example: 2
+                createdAt:
+                  type: string
+                  format: date-time
+                  example: "2026-10-03T12:00:00+00:00"
+                projects:
+                  type: array
+                  items:
+                    type: object
+                    required: [id, name, status]
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+                      name:
+                        type: string
+                        example: "Information Portal"
+                      status:
+                        $ref: "#/components/schemas/ProjectStatus"
+                      startDate:
+                        type: string
+                        format: date
+                        nullable: true
+                      endDate:
+                        type: string
+                        format: date
+                        nullable: true
+
+        TeamDetail:
+          type: object
+          required: [id, name, membersCount, projectsCount, createdAt]
+          properties:
+            id:
+              type: integer
+              example: 1
+            name:
+              type: string
+              example: "Core Platform Team"
+            description:
+              type: string
+              nullable: true
+              example: "Team responsible for core architecture and microservices"
+            membersCount:
+              type: integer
+              example: 4
+            projectsCount:
+              type: integer
+              example: 2
+            createdAt:
+              type: string
+              format: date-time
+            members:
+              type: array
+              items:
+                type: object
+                required: [id, name, email, role]
+                properties:
+                  id:
+                    type: integer
+                  name:
+                    type: string
+                  email:
+                    type: string
+                  role:
+                    type: string
+            projects:
+              type: array
+              items:
+                type: object
+                required: [id, name, status]
+                properties:
+                  id:
+                    type: integer
+                  name:
+                    type: string
+                  status:
+                    $ref: "#/components/schemas/ProjectStatus"
+
+        ProjectInput:
+          type: object
+          required: [name, status]
+          properties:
+            name:
+              type: string
+              example: "Strategic Cybersecurity Cloud"
+            description:
+              type: string
+              nullable: true
+              example: "Comprehensive SIEM implementation and threat monitoring"
+            status:
+              $ref: "#/components/schemas/ProjectStatus"
+            startDate:
+              type: string
+              format: date
+              nullable: true
+              example: "2026-02-01"
+            endDate:
+              type: string
+              format: date
+              nullable: true
+              example: "2026-11-30"
+            personIds:
+              type: array
+              items:
+                type: integer
+              example: [1, 2]
+            teamIds:
+              type: array
+              items:
+                type: integer
+              example: [1]
+
+        PersonInput:
+          type: object
+          required: [name, email, role]
+          properties:
+            name:
+              type: string
+              example: "Peter Parker"
+            email:
+              type: string
+              format: email
+              example: "peter.parker@example.com"
+            role:
+              type: string
+              example: "DevOps Engineer"
+            teamId:
+              type: integer
+              nullable: true
+              example: 1
+            projectIds:
+              type: array
+              items:
+                type: integer
+              example: [1]
+
+        TeamInput:
+          type: object
+          required: [name]
+          properties:
+            name:
+              type: string
+              example: "DevOps & Infrastructure"
+            description:
+              type: string
+              nullable: true
+              example: "Cloud orchestration and Kubernetes clusters"
+            memberIds:
+              type: array
+              items:
+                type: integer
+              example: [1, 3]
+
+        HealthStatus:
+          type: object
+          required: [status, service, database, stats, timestamp]
+          properties:
+            status:
+              type: string
+              example: "OK"
+            service:
+              type: string
+              example: "Project Management REST API"
+            database:
+              type: string
+              example: "connected"
+            stats:
+              type: object
+              required: [projects, persons, teams]
+              properties:
+                projects:
+                  type: integer
+                  example: 3
+                persons:
+                  type: integer
+                  example: 6
+                teams:
+                  type: integer
+                  example: 3
+            timestamp:
+              type: string
+              format: date-time
+
+        ApiResponseProjectList:
+          type: object
+          required: [success, data]
+          properties:
+            success:
+              type: boolean
+              example: true
+            count:
+              type: integer
+              example: 3
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/ProjectSimple"
+
+        ApiResponseProjectDetail:
+          type: object
+          required: [success, data]
+          properties:
+            success:
+              type: boolean
+              example: true
+            data:
+              $ref: "#/components/schemas/ProjectDetail"
+
+        ApiResponsePersonList:
+          type: object
+          required: [success, data]
+          properties:
+            success:
+              type: boolean
+              example: true
+            count:
+              type: integer
+              example: 6
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/PersonSimple"
+
+        ApiResponsePersonDetail:
+          type: object
+          required: [success, data]
+          properties:
+            success:
+              type: boolean
+              example: true
+            data:
+              $ref: "#/components/schemas/PersonDetail"
+
+        ApiResponseTeamList:
+          type: object
+          required: [success, data]
+          properties:
+            success:
+              type: boolean
+              example: true
+            count:
+              type: integer
+              example: 3
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/TeamSimple"
+
+        ApiResponseTeamDetail:
+          type: object
+          required: [success, data]
+          properties:
+            success:
+              type: boolean
+              example: true
+            data:
+              $ref: "#/components/schemas/TeamDetail"
+
+        ApiResponseSuccessMessage:
+          type: object
+          required: [success, message]
+          properties:
+            success:
+              type: boolean
+              example: true
+            message:
+              type: string
+              example: "Operation was successful"
+
+        ApiErrorResponse:
+          type: object
+          required: [success]
+          properties:
+            success:
+              type: boolean
+              example: false
+            message:
+              type: string
+              example: "Item not found"
+            errors:
+              type: object
+              additionalProperties:
+                type: string
+              example:
+                name: "Project name is required"
+  areas:
+    path_patterns:
+      - ^/api(?!/doc)

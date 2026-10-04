@@ -1,0 +1,1609 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Project & Team Management REST API",
+        "description": "Comprehensive OpenAPI 3.0 specification and REST API for project, team, and person management",
+        "version": "1.0.0"
+    },
+    "paths": {
+        "/api/health": {
+            "get": {
+                "tags": [
+                    "System"
+                ],
+                "summary": "API & database health check",
+                "description": "Returns the status of database connection and aggregated counts of projects, persons, and teams.",
+                "operationId": "get_app_database_health",
+                "responses": {
+                    "200": {
+                        "description": "System is healthy",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HealthStatus"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/database/init": {
+            "post": {
+                "tags": [
+                    "System"
+                ],
+                "summary": "Initialize database and seed sample data",
+                "description": "Creates tables in the SQLite database and seeds default test projects, teams, and persons.",
+                "operationId": "post_app_database_init",
+                "responses": {
+                    "200": {
+                        "description": "Database initialized successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseSuccessMessage"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/persons": {
+            "get": {
+                "tags": [
+                    "Persons"
+                ],
+                "summary": "List persons",
+                "description": "Returns a list of persons with optional filtering by name/email, role, or team ID",
+                "operationId": "get_app_person_index",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search in name, email, and role",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "role",
+                        "in": "query",
+                        "description": "Filter by exact role",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "teamId",
+                        "in": "query",
+                        "description": "Filter by team ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of persons",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponsePersonList"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Persons"
+                ],
+                "summary": "Create person",
+                "description": "Creates a new person profile with optional team and project assignments",
+                "operationId": "post_app_person_create",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PersonInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Person was successfully created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponsePersonDetail"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/persons/{id}": {
+            "get": {
+                "tags": [
+                    "Persons"
+                ],
+                "summary": "Get person details",
+                "description": "Returns details of a person including assigned team and participating projects",
+                "operationId": "get_app_person_show",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Person ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Person details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponsePersonDetail"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Person not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Persons"
+                ],
+                "summary": "Update person",
+                "description": "Updates an existing person profile",
+                "operationId": "put_app_person_update",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Person ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PersonInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Person was successfully updated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponsePersonDetail"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Person not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Persons"
+                ],
+                "summary": "Delete person",
+                "description": "Removes a person from the system",
+                "operationId": "delete_app_person_delete",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Person ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Person was successfully deleted",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseSuccessMessage"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Person not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/projects": {
+            "get": {
+                "tags": [
+                    "Projects"
+                ],
+                "summary": "List projects",
+                "description": "Returns a list of projects with optional search in name/description and status filtering",
+                "operationId": "get_app_project_index",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search query in project name or description",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter by project status",
+                        "schema": {
+                            "$ref": "#/components/schemas/ProjectStatus"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of projects",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseProjectList"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Projects"
+                ],
+                "summary": "Create project",
+                "description": "Creates a new project and optionally assigns initial persons and teams",
+                "operationId": "post_app_project_create",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ProjectInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Project was successfully created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseProjectDetail"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/projects/{id}": {
+            "get": {
+                "tags": [
+                    "Projects"
+                ],
+                "summary": "Get project details",
+                "description": "Returns project details including directly assigned persons, teams, and all aggregated participants",
+                "operationId": "get_app_project_show",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Project ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Project details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseProjectDetail"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Project not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Projects"
+                ],
+                "summary": "Update project",
+                "description": "Updates an existing project and its person/team assignments",
+                "operationId": "put_app_project_update",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Project ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ProjectInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Project was successfully updated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseProjectDetail"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Project not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Projects"
+                ],
+                "summary": "Delete project",
+                "description": "Deletes a project from the database",
+                "operationId": "delete_app_project_delete",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Project ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Project was successfully deleted",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseSuccessMessage"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Project not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/projects/{id}/persons/{personId}": {
+            "post": {
+                "tags": [
+                    "Projects"
+                ],
+                "summary": "Assign person to project",
+                "description": "Adds a direct assignment of a person to the project",
+                "operationId": "post_app_project_assignperson",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Project ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "personId",
+                        "in": "path",
+                        "description": "Person ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Person was assigned to project",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseProjectDetail"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Project or person not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Projects"
+                ],
+                "summary": "Remove person from project",
+                "description": "Removes direct assignment of a person from the project",
+                "operationId": "delete_app_project_removeperson",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Project ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "personId",
+                        "in": "path",
+                        "description": "Person ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Person was removed from project",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseProjectDetail"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Project or person not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/projects/{id}/teams/{teamId}": {
+            "post": {
+                "tags": [
+                    "Projects"
+                ],
+                "summary": "Assign team to project",
+                "description": "Assigns an entire team to the project (all team members become project participants)",
+                "operationId": "post_app_project_assignteam",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Project ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "teamId",
+                        "in": "path",
+                        "description": "Team ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Team was assigned to project",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseProjectDetail"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Project or team not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Projects"
+                ],
+                "summary": "Remove team from project",
+                "description": "Removes team assignment from the project",
+                "operationId": "delete_app_project_removeteam",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Project ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "teamId",
+                        "in": "path",
+                        "description": "Team ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Team was removed from project",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseProjectDetail"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Project or team not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/teams": {
+            "get": {
+                "tags": [
+                    "Teams"
+                ],
+                "summary": "List teams",
+                "description": "Returns a list of all teams with optional search in name and description",
+                "operationId": "get_app_team_index",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search in team name and description",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of teams",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseTeamList"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Teams"
+                ],
+                "summary": "Create team",
+                "description": "Creates a new team with optional initial member assignments",
+                "operationId": "post_app_team_create",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TeamInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Team was successfully created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseTeamDetail"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/teams/{id}": {
+            "get": {
+                "tags": [
+                    "Teams"
+                ],
+                "summary": "Get team details",
+                "description": "Returns team details including list of members and assigned projects",
+                "operationId": "get_app_team_show",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Team ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Team details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseTeamDetail"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Team not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Teams"
+                ],
+                "summary": "Update team",
+                "description": "Updates team name, description, or member assignments",
+                "operationId": "put_app_team_update",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Team ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TeamInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Team was successfully updated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseTeamDetail"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Team not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Teams"
+                ],
+                "summary": "Delete team",
+                "description": "Removes a team from the system and unlinks members and project associations",
+                "operationId": "delete_app_team_delete",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Team ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Team was successfully deleted",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseSuccessMessage"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Team not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "ProjectStatus": {
+                "type": "string",
+                "example": "In Progress",
+                "enum": [
+                    "Planned",
+                    "In Progress",
+                    "Completed",
+                    "On Hold"
+                ]
+            },
+            "TeamSimple": {
+                "required": [
+                    "id",
+                    "name"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Core Platform Team"
+                    },
+                    "membersCount": {
+                        "type": "integer",
+                        "example": 4
+                    }
+                },
+                "type": "object"
+            },
+            "PersonSimple": {
+                "required": [
+                    "id",
+                    "name",
+                    "email",
+                    "role"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "John Smith"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "example": "john.smith@example.com"
+                    },
+                    "role": {
+                        "type": "string",
+                        "example": "Project Lead"
+                    },
+                    "team": {
+                        "nullable": true,
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/TeamSimple"
+                            }
+                        ]
+                    }
+                },
+                "type": "object"
+            },
+            "ProjectSimple": {
+                "required": [
+                    "id",
+                    "name",
+                    "status",
+                    "directPersonsCount",
+                    "teamsCount",
+                    "totalParticipantsCount",
+                    "createdAt"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Information Portal & Data Warehouse"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Comprehensive modernization of internal project reporting and data lakes",
+                        "nullable": true
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/ProjectStatus"
+                    },
+                    "startDate": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-01-15",
+                        "nullable": true
+                    },
+                    "endDate": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-12-31",
+                        "nullable": true
+                    },
+                    "directPersonsCount": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "teamsCount": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "totalParticipantsCount": {
+                        "type": "integer",
+                        "example": 5
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-10-03T12:00:00+00:00"
+                    }
+                },
+                "type": "object"
+            },
+            "Participant": {
+                "required": [
+                    "id",
+                    "name",
+                    "email",
+                    "role",
+                    "assignmentType"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "John Smith"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "example": "john.smith@example.com"
+                    },
+                    "role": {
+                        "type": "string",
+                        "example": "Project Lead"
+                    },
+                    "assignmentType": {
+                        "type": "string",
+                        "example": "both",
+                        "enum": [
+                            "direct",
+                            "team",
+                            "both"
+                        ]
+                    },
+                    "team": {
+                        "nullable": true,
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/TeamSimple"
+                            }
+                        ]
+                    },
+                    "viaTeam": {
+                        "nullable": true,
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/TeamSimple"
+                            }
+                        ]
+                    }
+                },
+                "type": "object"
+            },
+            "ProjectDetail": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/ProjectSimple"
+                    },
+                    {
+                        "required": [
+                            "persons",
+                            "teams",
+                            "allParticipants"
+                        ],
+                        "properties": {
+                            "persons": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/PersonSimple"
+                                }
+                            },
+                            "teams": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/TeamSimple"
+                                }
+                            },
+                            "allParticipants": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/Participant"
+                                }
+                            }
+                        },
+                        "type": "object"
+                    }
+                ]
+            },
+            "PersonDetail": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/PersonSimple"
+                    },
+                    {
+                        "required": [
+                            "projectsCount",
+                            "createdAt"
+                        ],
+                        "properties": {
+                            "projectsCount": {
+                                "type": "integer",
+                                "example": 2
+                            },
+                            "createdAt": {
+                                "type": "string",
+                                "format": "date-time",
+                                "example": "2026-10-03T12:00:00+00:00"
+                            },
+                            "projects": {
+                                "type": "array",
+                                "items": {
+                                    "required": [
+                                        "id",
+                                        "name",
+                                        "status"
+                                    ],
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "name": {
+                                            "type": "string",
+                                            "example": "Information Portal"
+                                        },
+                                        "status": {
+                                            "$ref": "#/components/schemas/ProjectStatus"
+                                        },
+                                        "startDate": {
+                                            "type": "string",
+                                            "format": "date",
+                                            "nullable": true
+                                        },
+                                        "endDate": {
+                                            "type": "string",
+                                            "format": "date",
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "type": "object"
+                    }
+                ]
+            },
+            "TeamDetail": {
+                "required": [
+                    "id",
+                    "name",
+                    "membersCount",
+                    "projectsCount",
+                    "createdAt"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Core Platform Team"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Team responsible for core architecture and microservices",
+                        "nullable": true
+                    },
+                    "membersCount": {
+                        "type": "integer",
+                        "example": 4
+                    },
+                    "projectsCount": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "members": {
+                        "type": "array",
+                        "items": {
+                            "required": [
+                                "id",
+                                "name",
+                                "email",
+                                "role"
+                            ],
+                            "properties": {
+                                "id": {
+                                    "type": "integer"
+                                },
+                                "name": {
+                                    "type": "string"
+                                },
+                                "email": {
+                                    "type": "string"
+                                },
+                                "role": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "projects": {
+                        "type": "array",
+                        "items": {
+                            "required": [
+                                "id",
+                                "name",
+                                "status"
+                            ],
+                            "properties": {
+                                "id": {
+                                    "type": "integer"
+                                },
+                                "name": {
+                                    "type": "string"
+                                },
+                                "status": {
+                                    "$ref": "#/components/schemas/ProjectStatus"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "ProjectInput": {
+                "required": [
+                    "name",
+                    "status"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "example": "Strategic Cybersecurity Cloud"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Comprehensive SIEM implementation and threat monitoring",
+                        "nullable": true
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/ProjectStatus"
+                    },
+                    "startDate": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-02-01",
+                        "nullable": true
+                    },
+                    "endDate": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2026-11-30",
+                        "nullable": true
+                    },
+                    "personIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "example": [
+                            1,
+                            2
+                        ]
+                    },
+                    "teamIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "example": [
+                            1
+                        ]
+                    }
+                },
+                "type": "object"
+            },
+            "PersonInput": {
+                "required": [
+                    "name",
+                    "email",
+                    "role"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "example": "Peter Parker"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "example": "peter.parker@example.com"
+                    },
+                    "role": {
+                        "type": "string",
+                        "example": "DevOps Engineer"
+                    },
+                    "teamId": {
+                        "type": "integer",
+                        "example": 1,
+                        "nullable": true
+                    },
+                    "projectIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "example": [
+                            1
+                        ]
+                    }
+                },
+                "type": "object"
+            },
+            "TeamInput": {
+                "required": [
+                    "name"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "example": "DevOps & Infrastructure"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Cloud orchestration and Kubernetes clusters",
+                        "nullable": true
+                    },
+                    "memberIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "example": [
+                            1,
+                            3
+                        ]
+                    }
+                },
+                "type": "object"
+            },
+            "HealthStatus": {
+                "required": [
+                    "status",
+                    "service",
+                    "database",
+                    "stats",
+                    "timestamp"
+                ],
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "example": "OK"
+                    },
+                    "service": {
+                        "type": "string",
+                        "example": "Project Management REST API"
+                    },
+                    "database": {
+                        "type": "string",
+                        "example": "connected"
+                    },
+                    "stats": {
+                        "required": [
+                            "projects",
+                            "persons",
+                            "teams"
+                        ],
+                        "properties": {
+                            "projects": {
+                                "type": "integer",
+                                "example": 3
+                            },
+                            "persons": {
+                                "type": "integer",
+                                "example": 6
+                            },
+                            "teams": {
+                                "type": "integer",
+                                "example": 3
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "timestamp": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "ApiResponseProjectList": {
+                "required": [
+                    "success",
+                    "data"
+                ],
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "count": {
+                        "type": "integer",
+                        "example": 3
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ProjectSimple"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "ApiResponseProjectDetail": {
+                "required": [
+                    "success",
+                    "data"
+                ],
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/ProjectDetail"
+                    }
+                },
+                "type": "object"
+            },
+            "ApiResponsePersonList": {
+                "required": [
+                    "success",
+                    "data"
+                ],
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "count": {
+                        "type": "integer",
+                        "example": 6
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PersonSimple"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "ApiResponsePersonDetail": {
+                "required": [
+                    "success",
+                    "data"
+                ],
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/PersonDetail"
+                    }
+                },
+                "type": "object"
+            },
+            "ApiResponseTeamList": {
+                "required": [
+                    "success",
+                    "data"
+                ],
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "count": {
+                        "type": "integer",
+                        "example": 3
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/TeamSimple"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "ApiResponseTeamDetail": {
+                "required": [
+                    "success",
+                    "data"
+                ],
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/TeamDetail"
+                    }
+                },
+                "type": "object"
+            },
+            "ApiResponseSuccessMessage": {
+                "required": [
+                    "success",
+                    "message"
+                ],
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "message": {
+                        "type": "string",
+                        "example": "Operation was successful"
+                    }
+                },
+                "type": "object"
+            },
+            "ApiErrorResponse": {
+                "required": [
+                    "success"
+                ],
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "example": false
+                    },
+                    "message": {
+                        "type": "string",
+                        "example": "Item not found"
+                    },
+                    "errors": {
+                        "type": "object",
+                        "example": {
+                            "name": "Project name is required"
+                        },
+                        "additionalProperties": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "type": "object"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "System",
+            "description": "System health check and database initialization"
+        },
+        {
+            "name": "Persons",
+            "description": "Management of persons and their assignments to teams and projects"
+        },
+        {
+            "name": "Projects",
+            "description": "Management of projects and person/team assignments"
+        },
+        {
+            "name": "Teams",
+            "description": "Management of working teams and their members"
+        }
+    ]
+}
