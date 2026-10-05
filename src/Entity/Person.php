@@ -109,11 +109,12 @@ class Person
         }
 
         $oldTeam = $this->team;
-        $this->team = $team;
 
         if ($oldTeam !== null && $oldTeam->getMembers()->contains($this)) {
             $oldTeam->getMembers()->removeElement($this);
         }
+
+        $this->team = $team;
 
         if ($team !== null && !$team->getMembers()->contains($this)) {
             $team->getMembers()->add($this);
