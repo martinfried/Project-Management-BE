@@ -1,0 +1,22 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: project-management-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      APP_ENV: dev
+      APP_DEBUG: "1"
+      APP_SECRET: "${APP_SECRET:-replace_with_a_secure_random_secret_in_production}"
+      DATABASE_URL: "sqlite:///%kernel.project_dir%/var/data.db"
+      CORS_ALLOW_ORIGIN: "^https?://(localhost|127\\.0\\.0\\.1)(:[0-9]+)?$$"
+    volumes:
+      - .:/var/www/html
+      - sqlite_data:/var/www/html/var
+
+volumes:
+  sqlite_data:
+    driver: local
