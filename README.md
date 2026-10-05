@@ -1,43 +1,34 @@
-# Project Management System - Backend API
+# Backend – Evidence projektů a členů týmů
 
-Robust REST API backend for managing projects, persons, and teams, built with **Symfony 6.4 / 7 (PHP 8.2+)**, **Doctrine ORM**, and **SQLite**.
-
----
-
-## 🌟 Key Features
-
-- **Project Management (CRUD)**: Name, description, status (_Planned / In Progress / Completed / On Hold_), start and end dates.
-- **Person Management (CRUD)**: Name, validated unique email, role (_Developer, Analyst, Project Lead, etc._), team and project assignments.
-- **Team Concept (Bonus)**: Create and manage working teams, associate persons to teams (1:N), assign teams to projects (M:N).
-- **Participant Aggregation**: Automatically calculates all unique project participants (directly assigned persons + members of assigned teams).
-- **Data Integrity & Cascades**: Safe entity removal with automatic relationship cleanup.
-- **Automatic Initialization**: Auto schema migration and sample data seeding via CLI or REST endpoint.
-- **OpenAPI / Swagger 3.0**: Interactive API documentation served live at `/api/doc`.
+Tento projekt je backendová část fullstack aplikace pro evidenci projektů, lidí a týmů. Postavil jsem ho jako REST API v PHP na frameworku Symfony. Pro práci s daty jsem zvolil Doctrine ORM a jako storage používám SQLite, aby šel celý backend jednoduše spustit bez složitého nastavování externího DB serveru.
 
 ---
 
-## 🛠️ Tech Stack & Dependencies
+## Co aplikace dělá a jak jsem ji navrhl
 
-- **PHP 8.2+**
-- **Symfony Framework (6.4 / 7 LTS)**
-- **Doctrine ORM & DBAL** – Relational database management and entity mappings
-- **SQLite 3** – Lightweight embedded SQL database
-- **NelmioApiDocBundle** – Dynamic OpenAPI 3.0 generation and interactive Swagger UI
-- **NelmioCorsBundle** – Configurable CORS headers for frontend integration
-- **Symfony Validator** – Strict input validation (email format, required fields, string length)
-- **Symfony Serializer** – Entity transformation to JSON
+Cílem bylo vytvořit přehledný systém pro správu projektů a lidí, kteří na nich dělají. Celou doménu jsem rozdělil do tří hlavních entit: projekty, osoby a týmy.
+
+### Funkcionalita a business logika
+
+- **Projekty**: Eviduje se název, popis, stav `Planned`, `In Progress`, `Completed`, `On Hold` a termíny – start date i volitelný end date. Validace hlídá, aby datum zahájení nebylo v minulosti a end date nebyl před start datem.
+- **Osoby**: U každého člověka se ukládá jméno, unikátní e-mail a pracovní role jako developer, analytik nebo manažer. Každá osoba může patřit maximálně do jednoho týmu a zároveň mít přímé přiřazení k více projektům.
+- **Správa týmů**: Přidal jsem koncept pracovních týmů. Vztah mezi osobou a týmem je 1:N a celé týmy se pak propojují s projekty přes M:N vazbu.
+- **Agregace účastníků**: V detailu projektu jsem vyřešil skládání celkového seznamu účastníků. Logika projde přímo přiřazené lidi i členy přiřazených týmů, odstraní duplicity a u každého označí source – direct, team nebo both.
+- **Integrita dat a mazání**: Při smazání projektu se vyčistí jen záznamy ve vazebních tabulkách, samotné osoby ani týmy se nemažou. Pokud se smaže tým, jeho členům se nastaví vazba na `NULL` přes `ON DELETE SET NULL`. Při smazání osoby se bezpečně uklidí její vazby na projekty i členství v týmu.
 
 ---
 
-## 🗄️ Database Schema (ER Diagram)
+## Databázové schéma
+
+Navrhl jsem relační schéma se dvěma vazebními tabulkami pro M:N relace:
 
 ```mermaid
 erDiagram
-    TEAMS ||--o{ PERSONS : "has members (1:N)"
-    TEAMS }o--o{ PROJECT_TEAM : "assigned to"
-    PROJECTS }o--o{ PROJECT_TEAM : "includes"
-    PROJECTS }o--o{ PROJECT_PERSON : "directly assigned"
-    PERSONS }o--o{ PROJECT_PERSON : "works on"
+    TEAMS ||--o{ PERSONS : "má členy 1:N"
+    TEAMS }o--o{ PROJECT_TEAM : "přiřazen k"
+    PROJECTS }o--o{ PROJECT_TEAM : "obsahuje"
+    PROJECTS }o--o{ PROJECT_PERSON : "přímo přiřazen"
+    PERSONS }o--o{ PROJECT_PERSON : "pracuje na"
 
     TEAMS {
         int id PK
@@ -78,182 +69,269 @@ erDiagram
 
 ---
 
-## 🚀 Running the Application
+## Použité technologie a tech stack
 
-### 1. Using Docker (Recommended)
+- **PHP 8.2+**: Moderní syntaxe a language features jako atributy, typed properties nebo union types.
+- **Symfony 6.4 / 7 LTS**:
+  - `FrameworkBundle`: Routing, dependency injection kontejner a request handling.
+  - `Validator`: Validace příchozích JSON payloadů pomocí atributů přímo na entitách.
+  - `Serializer`: Serializace entit a polí do JSON response.
+  - `Console`: CLI commandy pro správu databáze a seedování dat.
+- **Doctrine ORM & DBAL**: Mapování objektů na relační tabulky, migrace a správa relací.
+- **SQLite 3**: Lehká relační databáze v souboru `var/data.db`, v Dockeru persistovaná přes pojmenovaný volume.
+- **NelmioApiDocBundle**: Automaticky generuje OpenAPI 3.0 specifikaci a interaktivní Swagger UI pro testování endpointů přímo z browseru.
+- **NelmioCorsBundle**: Handling CORS hlaviček pro bezproblémové volání API z frontendu.
+- **Docker & Docker Compose**: Kontejnerizace celého backendu s automatickým seedováním DB při prvním spuštění.
 
-From the project root:
+---
 
-```bash
-docker compose up --build
+## Struktura projektu
+
+```
+backend/
+├── bin/console                  # Symfony konzole
+├── config/                      # Konfigurace balíčků a services
+├── public/index.php             # Entrypoint aplikace
+├── src/
+│   ├── Command/
+│   │   └── AppInitDbCommand.php # CLI command app:init-db pro sestavení schématu a seed dat
+│   ├── Controller/
+│   │   ├── BaseApiController.php# Společný controller s helpery pro JSON response a validace
+│   │   ├── ProjectController.php# API endpointy pro projekty a přiřazování účastníků
+│   │   ├── PersonController.php # API endpointy pro správu osob a vazeb
+│   │   ├── TeamController.php   # API endpointy pro týmy a členy
+│   │   ├── DatabaseController.php# Endpoint pro reset a re-seed DB přes HTTP
+│   │   └── HealthController.php # Healthcheck endpoint
+│   ├── Entity/                  # Doctrine entity Project, Person, Team
+│   ├── Repository/              # Repozitáře pro optimalizované databázové queries
+│   └── Kernel.php               # Symfony Kernel
+├── Dockerfile                   # Dockerfile pro backend image
+├── docker-compose.yml           # Compose konfigurace pro lokální dev
+└── docker-entrypoint.sh         # Entrypoint skript s automatickou inicializací DB
 ```
 
-Or independently within the `backend/` directory:
+---
 
-```bash
-docker compose up --build
-```
+## Setup a jak aplikaci spustit
 
-The API will be available at: `http://localhost:8000/api`  
-Swagger UI documentation: `http://localhost:8000/api/doc`
+### Spuštění přes Docker Compose
 
-### 2. Local Setup (Without Docker)
-
-Requirements: PHP >= 8.2 with `pdo_sqlite`, `curl`, `intl`, `zip` extensions and Composer.
+Pokud máte nainstalovaný Docker, stačí spustit:
 
 ```bash
 cd backend
-composer install
-php bin/console app:init-db --seed
-php -S 0.0.0.0:8000 -t public
+docker compose up --build
 ```
 
+Kontejner při startu sám checkne, jestli databáze existuje. Pokud ne, vytvoří schéma tabulek a automaticky je naseeduje testovacími daty.
+
+Běžící API a dokumentace jsou dostupné na:
+- REST API: `http://localhost:8000/api`
+- Swagger UI s interaktivní dokumentací: `http://localhost:8000/api/doc`
+- OpenAPI JSON schéma: `http://localhost:8000/api/doc.json`
+- Healthcheck: `http://localhost:8000/api/health`
+
+Vypnutí kontejneru:
+```bash
+docker compose down
+```
+
+### Spuštění lokálně bez Dockeru
+
+Požadavky: PHP 8.2+ s rozšířeními `pdo_sqlite`, `curl`, `intl`, `mbstring`, `zip`, `xml` a Composer.
+
+1. Instalace balíčků:
+
+   ```bash
+   cd backend
+   composer install
+   ```
+
+2. Příprava `.env` souboru:
+
+   ```bash
+   cp .env .env.local
+   ```
+
+3. Vytvoření databáze a naplnění vzorovými daty:
+
+   ```bash
+   php bin/console app:init-db --seed
+   ```
+
+4. Spuštění lokálního serveru:
+   ```bash
+   php -S 0.0.0.0:8000 -t public
+   ```
+   Backend poběží na `http://localhost:8000`.
+
 ---
 
-## 📡 REST API Endpoints Overview
+## Přehled REST API endpointů
 
-### System & Health
+### Systém
 
-| Method | Endpoint             | Description                          |
-| ------ | -------------------- | ------------------------------------ |
-| `GET`  | `/api/health`        | Health check and record counts       |
-| `POST` | `/api/database/init` | Schema creation and sample data seed |
-| `GET`  | `/api/doc`           | Swagger UI documentation             |
-| `GET`  | `/api/doc.json`      | Raw OpenAPI 3.0 specification        |
+| Metoda | Endpoint             | Popis                                                                          |
+| :----- | :------------------- | :----------------------------------------------------------------------------- |
+| `GET`  | `/api/health`        | Kontrola funkčnosti API a počty záznamů                                        |
+| `POST` | `/api/database/init` | Vyčištění a reinicializace databáze s testovacími daty – dostupné i přes reset button v patičce frontendu |
+| `GET`  | `/api/doc`           | Swagger UI rozhraní v prohlížeči                                               |
+| `GET`  | `/api/doc.json`      | OpenAPI 3.0 specifikace v JSON                                                 |
 
----
-
-### Projects (`/api/projects`)
-
-#### `GET /api/projects`
-
-List all projects. Supports query parameters `?search=portal` and `?status=In%20Progress`.
-
-**Sample Response (200 OK):**
+Ukázka z `/api/health`:
 
 ```json
 {
-  "success": true,
-  "count": 1,
-  "data": [
-    {
-      "id": 1,
-      "name": "Information Portal & Data Warehouse",
-      "description": "Comprehensive modernization of internal project reporting",
-      "status": "In Progress",
-      "startDate": "2026-01-15",
-      "endDate": "2026-12-31",
-      "directPersonsCount": 2,
-      "teamsCount": 1,
-      "totalParticipantsCount": 4,
-      "createdAt": "2026-01-15T08:00:00+00:00"
-    }
-  ]
+  "status": "OK",
+  "service": "Project Management REST API",
+  "database": "connected",
+  "stats": {
+    "projects": 4,
+    "persons": 6,
+    "teams": 3
+  },
+  "timestamp": "2026-10-05T12:00:00+00:00"
 }
 ```
 
-#### `GET /api/projects/{id}`
+---
 
-Project detail including directly assigned persons, teams, and deduplicated allParticipants.
+### Projekty – `/api/projects`
 
-#### `POST /api/projects`
+| Metoda   | Endpoint                                | Popis                                         |
+| :------- | :-------------------------------------- | :-------------------------------------------- |
+| `GET`    | `/api/projects`                         | Seznam projektů s filtry `search` a `status`  |
+| `GET`    | `/api/projects/{id}`                    | Detail projektu včetně dopočítaných účastníků |
+| `POST`   | `/api/projects`                         | Vytvoření nového projektu                     |
+| `PUT`    | `/api/projects/{id}`                    | Úprava projektu a vazeb                       |
+| `DELETE` | `/api/projects/{id}`                    | Smazání projektu                              |
+| `POST`   | `/api/projects/{id}/persons/{personId}` | Přímé přiřazení osoby k projektu              |
+| `DELETE` | `/api/projects/{id}/persons/{personId}` | Odebrání osoby z projektu                     |
+| `POST`   | `/api/projects/{id}/teams/{teamId}`     | Přiřazení celého týmu k projektu              |
+| `DELETE` | `/api/projects/{id}/teams/{teamId}`     | Odebrání týmu z projektu                      |
 
-Create a new project.
-
-**Sample Request:**
+Ukázka založení projektu – `POST /api/projects`:
 
 ```json
 {
-  "name": "Security Audit & Infrastructure Hardening",
-  "description": "Vulnerability assessment and zero-trust perimeter implementation",
+  "name": "Klientský portál",
+  "description": "Nové webové rozhraní a platební brána",
   "status": "Planned",
-  "startDate": "2026-05-01",
-  "endDate": "2026-11-30",
+  "startDate": "2026-11-01",
+  "endDate": "2027-04-30",
   "personIds": [1, 2],
   "teamIds": [1]
 }
 ```
 
-#### `PUT /api/projects/{id}`
-
-Update an existing project and its person/team assignments.
-
-#### `DELETE /api/projects/{id}`
-
-Delete a project (safely removes relationship records).
-
-#### `POST /api/projects/{id}/persons/{personId}` / `DELETE /api/projects/{id}/persons/{personId}`
-
-Assign or remove a direct person assignment.
-
-#### `POST /api/projects/{id}/teams/{teamId}` / `DELETE /api/projects/{id}/teams/{teamId}`
-
-Assign or remove a team assignment.
-
----
-
-### Persons (`/api/persons`)
-
-#### `GET /api/persons`
-
-List persons. Supports `?search=john`, `?role=Developer`, `?teamId=1`.
-
-#### `GET /api/persons/{id}`
-
-Person detail including team and assigned projects.
-
-#### `POST /api/persons`
-
-Create a new person.
-
-**Sample Request:**
+Ukázka odpovědi detailu projektu – `GET /api/projects/1`:
 
 ```json
 {
-  "name": "Lucas Miller",
-  "email": "lucas.miller@example.com",
-  "role": "Security Analyst",
-  "teamId": 2,
+  "success": true,
+  "data": {
+    "id": 1,
+    "name": "Klientský portál",
+    "description": "Nové webové rozhraní a platební brána",
+    "status": "Planned",
+    "startDate": "2026-11-01",
+    "endDate": "2027-04-30",
+    "directPersonsCount": 2,
+    "teamsCount": 1,
+    "totalParticipantsCount": 3,
+    "createdAt": "2026-10-05T10:00:00+00:00",
+    "persons": [
+      {
+        "id": 1,
+        "name": "Jan Novák",
+        "email": "jan.novak@example.cz",
+        "role": "Architekt"
+      },
+      {
+        "id": 2,
+        "name": "Petr Svoboda",
+        "email": "petr.svoboda@example.cz",
+        "role": "Frontend vývojář"
+      }
+    ],
+    "teams": [{ "id": 1, "name": "Web Core Team", "membersCount": 2 }],
+    "allParticipants": [
+      {
+        "id": 1,
+        "name": "Jan Novák",
+        "email": "jan.novak@example.cz",
+        "role": "Architekt",
+        "assignmentType": "both",
+        "viaTeam": { "id": 1, "name": "Web Core Team" }
+      },
+      {
+        "id": 2,
+        "name": "Petr Svoboda",
+        "email": "petr.svoboda@example.cz",
+        "role": "Frontend vývojář",
+        "assignmentType": "direct"
+      },
+      {
+        "id": 3,
+        "name": "Eva Dvořáková",
+        "email": "eva.dvorakova@example.cz",
+        "role": "Backend vývojář",
+        "assignmentType": "team",
+        "viaTeam": { "id": 1, "name": "Web Core Team" }
+      }
+    ]
+  }
+}
+```
+
+---
+
+### Osoby – `/api/persons`
+
+| Metoda   | Endpoint            | Popis                                                  |
+| :------- | :------------------ | :----------------------------------------------------- |
+| `GET`    | `/api/persons`      | Seznam osob s filtry `search`, `role` a `teamId`       |
+| `GET`    | `/api/persons/{id}` | Detail osoby včetně týmu a řešených projektů           |
+| `POST`   | `/api/persons`      | Vytvoření nové osoby                                   |
+| `PUT`    | `/api/persons/{id}` | Úprava údajů osoby nebo změna týmu                     |
+| `DELETE` | `/api/persons/{id}` | Smazání osoby                                          |
+
+Ukázka vytvoření osoby – `POST /api/persons`:
+
+```json
+{
+  "name": "Michal Kovář",
+  "email": "michal.kovar@example.cz",
+  "role": "Tester",
+  "teamId": 1,
   "projectIds": [1]
 }
 ```
 
-#### `PUT /api/persons/{id}`
-
-Update person profile.
-
-#### `DELETE /api/persons/{id}`
-
-Delete person (unlinks from projects and teams).
-
 ---
 
-### Teams (`/api/teams`)
+### Týmy – `/api/teams`
 
-#### `GET /api/teams`
+| Metoda   | Endpoint          | Popis                                           |
+| :------- | :---------------- | :---------------------------------------------- |
+| `GET`    | `/api/teams`      | Seznam týmů s počty členů a projektů            |
+| `GET`    | `/api/teams/{id}` | Detail týmu včetně členů a přiřazených projektů |
+| `POST`   | `/api/teams`      | Založení nového týmu                            |
+| `PUT`    | `/api/teams/{id}` | Úprava týmu a nastavení členské základny        |
+| `DELETE` | `/api/teams/{id}` | Smazání týmu                                    |
 
-List all teams with member counts. Supports `?search=Core`.
-
-#### `GET /api/teams/{id}`
-
-Team detail including members and assigned projects.
-
-#### `POST /api/teams`
-
-Create a team.
+Ukázka vytvoření týmu – `POST /api/teams`:
 
 ```json
 {
-  "name": "Cyber Defense Response Team (CERT)",
-  "description": "Specialized unit for forensic analysis and incident response",
-  "memberIds": [3, 4]
+  "name": "Infrastruktura a provoz",
+  "description": "Správa serverů a automatizace nasazení",
+  "memberIds": [4, 5]
 }
 ```
 
-#### `PUT /api/teams/{id}`
+---
 
-Update team name, description, or member assignments.
+## Poznámka k vývoji
 
-#### `DELETE /api/teams/{id}`
-
-Delete team (unlinks members without deleting person records).
+Při vývoji tohoto projektu jsem jako asistenta využíval umělou inteligenci, kterou jsem aktivně promptoval, moderoval a usměrňoval.
