@@ -9,6 +9,7 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 #[ORM\Entity(repositoryClass: ProjectRepository::class)]
 #[ORM\Table(name: 'projects')]
@@ -145,6 +146,39 @@ class Project
         return $this;
     }
 
+    private ?\DateTimeInterface $originalStartDate = null;
+
+    #[ORM\PostLoad]
+    public function onPostLoad(): void
+    {
+        $this->originalStartDate = $this->startDate ? clone $this->startDate : null;
+    }
+
+    #[Assert\Callback]
+    public function validateDates(ExecutionContextInterface $context): void
+    {
+        $todayStr = (new \DateTime())->format('Y-m-d');
+        $startStr = $this->startDate?->format('Y-m-d');
+        $endStr = $this->endDate?->format('Y-m-d');
+
+        $isNewStartDate = $this->originalStartDate === null
+            || ($startStr !== null && $startStr !== $this->originalStartDate->format('Y-m-d'));
+
+        // Start date cannot be in the past for new projects or when modifying start date
+        if ($startStr !== null && $isNewStartDate && $startStr < $todayStr) {
+            $context->buildViolation('Start date cannot be in the past')
+                ->atPath('startDate')
+                ->addViolation();
+        }
+
+        // End date cannot be before start date
+        if ($startStr !== null && $endStr !== null && $endStr < $startStr) {
+            $context->buildViolation('End date cannot be earlier than start date')
+                ->atPath('endDate')
+                ->addViolation();
+        }
+    }
+
     /**
      * @return Collection<int, Person>
      */
@@ -237,6 +271,10 @@ class Project
                             'id' => $team->getId(),
                             'name' => $team->getName(),
                         ],
+                        'viaTeam' => [
+                            'id' => $team->getId(),
+                            'name' => $team->getName(),
+                        ],
                     ];
                 }
             }
@@ -261,7 +299,7 @@ class Project
         ];
 
         if ($includeRelations) {
-            $data['persons'] = $this->persons->map(fn(Person $p) => [
+            $data['persons'] = array_values($this->persons->map(fn(Person $p) => [
                 'id' => $p->getId(),
                 'name' => $p->getName(),
                 'email' => $p->getEmail(),
@@ -270,13 +308,13 @@ class Project
                     'id' => $p->getTeam()->getId(),
                     'name' => $p->getTeam()->getName(),
                 ] : null,
-            ])->toArray();
+            ])->toArray());
 
-            $data['teams'] = $this->teams->map(fn(Team $t) => [
+            $data['teams'] = array_values($this->teams->map(fn(Team $t) => [
                 'id' => $t->getId(),
                 'name' => $t->getName(),
                 'membersCount' => $t->getMembers()->count(),
-            ])->toArray();
+            ])->toArray());
 
             $data['allParticipants'] = $this->getAllParticipants();
         }
