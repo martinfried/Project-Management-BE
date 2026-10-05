@@ -1,26 +1,26 @@
 # Backend – Evidence projektů a členů týmů
 
-Tento projekt je backendová část fullstack aplikace pro evidenci projektů, lidí a týmů. Postavil jsem ho jako REST API v PHP na frameworku Symfony. Pro práci s daty jsem zvolil Doctrine ORM a jako storage používám SQLite, aby šel celý backend jednoduše spustit bez složitého nastavování externího DB serveru.
+Tento projekt představuje backendovou část fullstack aplikace pro evidenci projektů, lidí a týmů. Je navržen jako REST API v PHP na frameworku Symfony. Pro práci s daty a objektově-relační mapování využívá Doctrine ORM a jako storage slouží SQLite, což umožňuje jednoduché a rychlé spuštění bez nutnosti konfigurovat externí databázový server.
 
 ---
 
-## Co aplikace dělá a jak jsem ji navrhl
+## Přehled systému a architektura
 
-Cílem bylo vytvořit přehledný systém pro správu projektů a lidí, kteří na nich dělají. Celou doménu jsem rozdělil do tří hlavních entit: projekty, osoby a týmy.
+Systém slouží k přehledné evidenci projektů, lidí a jejich zařazení do týmů. Celá doména je rozdělena do tří hlavních entit: projekty, osoby a týmy.
 
 ### Funkcionalita a business logika
 
 - **Projekty**: Eviduje se název, popis, stav `Planned`, `In Progress`, `Completed`, `On Hold` a termíny – start date i volitelný end date. Validace hlídá, aby datum zahájení nebylo v minulosti a end date nebyl před start datem.
 - **Osoby**: U každého člověka se ukládá jméno, unikátní e-mail a pracovní role jako developer, analytik nebo manažer. Každá osoba může patřit maximálně do jednoho týmu a zároveň mít přímé přiřazení k více projektům.
-- **Správa týmů**: Přidal jsem koncept pracovních týmů. Vztah mezi osobou a týmem je 1:N a celé týmy se pak propojují s projekty přes M:N vazbu.
-- **Agregace účastníků**: V detailu projektu jsem vyřešil skládání celkového seznamu účastníků. Logika projde přímo přiřazené lidi i členy přiřazených týmů, odstraní duplicity a u každého označí source – direct, team nebo both.
+- **Správa týmů**: Zahrnuje koncept pracovních týmů. Vztah mezi osobou a týmem je 1:N a celé týmy se pak propojují s projekty přes M:N vazbu.
+- **Agregace účastníků**: V detailu projektu je implementováno automatické skládání celkového seznamu účastníků. Logika projde přímo přiřazené lidi i členy přiřazených týmů, odstraní duplicity a u každého označí source – direct, team nebo both.
 - **Integrita dat a mazání**: Při smazání projektu se vyčistí jen záznamy ve vazebních tabulkách, samotné osoby ani týmy se nemažou. Pokud se smaže tým, jeho členům se nastaví vazba na `NULL` přes `ON DELETE SET NULL`. Při smazání osoby se bezpečně uklidí její vazby na projekty i členství v týmu.
 
 ---
 
 ## Databázové schéma
 
-Navrhl jsem relační schéma se dvěma vazebními tabulkami pro M:N relace:
+Relační schéma využívá dvě vazební tabulky pro M:N relace:
 
 ```mermaid
 erDiagram
@@ -126,12 +126,14 @@ docker compose up --build
 Kontejner při startu sám checkne, jestli databáze existuje. Pokud ne, vytvoří schéma tabulek a automaticky je naseeduje testovacími daty.
 
 Běžící API a dokumentace jsou dostupné na:
+
 - REST API: `http://localhost:8000/api`
 - Swagger UI s interaktivní dokumentací: `http://localhost:8000/api/doc`
 - OpenAPI JSON schéma: `http://localhost:8000/api/doc.json`
 - Healthcheck: `http://localhost:8000/api/health`
 
 Vypnutí kontejneru:
+
 ```bash
 docker compose down
 ```
@@ -171,12 +173,12 @@ Požadavky: PHP 8.2+ s rozšířeními `pdo_sqlite`, `curl`, `intl`, `mbstring`,
 
 ### Systém
 
-| Metoda | Endpoint             | Popis                                                                          |
-| :----- | :------------------- | :----------------------------------------------------------------------------- |
-| `GET`  | `/api/health`        | Kontrola funkčnosti API a počty záznamů                                        |
+| Metoda | Endpoint             | Popis                                                                                                     |
+| :----- | :------------------- | :-------------------------------------------------------------------------------------------------------- |
+| `GET`  | `/api/health`        | Kontrola funkčnosti API a počty záznamů                                                                   |
 | `POST` | `/api/database/init` | Vyčištění a reinicializace databáze s testovacími daty – dostupné i přes reset button v patičce frontendu |
-| `GET`  | `/api/doc`           | Swagger UI rozhraní v prohlížeči                                               |
-| `GET`  | `/api/doc.json`      | OpenAPI 3.0 specifikace v JSON                                                 |
+| `GET`  | `/api/doc`           | Swagger UI rozhraní v prohlížeči                                                                          |
+| `GET`  | `/api/doc.json`      | OpenAPI 3.0 specifikace v JSON                                                                            |
 
 Ukázka z `/api/health`:
 
@@ -288,13 +290,13 @@ Ukázka odpovědi detailu projektu – `GET /api/projects/1`:
 
 ### Osoby – `/api/persons`
 
-| Metoda   | Endpoint            | Popis                                                  |
-| :------- | :------------------ | :----------------------------------------------------- |
-| `GET`    | `/api/persons`      | Seznam osob s filtry `search`, `role` a `teamId`       |
-| `GET`    | `/api/persons/{id}` | Detail osoby včetně týmu a řešených projektů           |
-| `POST`   | `/api/persons`      | Vytvoření nové osoby                                   |
-| `PUT`    | `/api/persons/{id}` | Úprava údajů osoby nebo změna týmu                     |
-| `DELETE` | `/api/persons/{id}` | Smazání osoby                                          |
+| Metoda   | Endpoint            | Popis                                            |
+| :------- | :------------------ | :----------------------------------------------- |
+| `GET`    | `/api/persons`      | Seznam osob s filtry `search`, `role` a `teamId` |
+| `GET`    | `/api/persons/{id}` | Detail osoby včetně týmu a řešených projektů     |
+| `POST`   | `/api/persons`      | Vytvoření nové osoby                             |
+| `PUT`    | `/api/persons/{id}` | Úprava údajů osoby nebo změna týmu               |
+| `DELETE` | `/api/persons/{id}` | Smazání osoby                                    |
 
 Ukázka vytvoření osoby – `POST /api/persons`:
 
