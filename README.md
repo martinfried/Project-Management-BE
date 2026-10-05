@@ -91,8 +91,7 @@ docker compose up --build
 Or independently within the `backend/` directory:
 
 ```bash
-docker build -t project-backend .
-docker run -p 8000:8000 project-backend
+docker compose up --build
 ```
 
 The API will be available at: `http://localhost:8000/api`  
