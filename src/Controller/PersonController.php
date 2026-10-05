@@ -215,6 +215,12 @@ class PersonController extends BaseApiController
         foreach ($person->getProjects() as $project) {
             $project->removePerson($person);
         }
+        $person->getProjects()->clear();
+
+        // Unlink from team if assigned
+        if ($team = $person->getTeam()) {
+            $team->removeMember($person);
+        }
 
         $this->em->remove($person);
         $this->em->flush();

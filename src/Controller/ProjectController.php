@@ -212,6 +212,18 @@ class ProjectController extends BaseApiController
             return $this->notFoundResponse('Project not found');
         }
 
+        // Unlink person relations
+        foreach ($project->getPersons() as $person) {
+            $person->getProjects()->removeElement($project);
+        }
+        $project->getPersons()->clear();
+
+        // Unlink team relations
+        foreach ($project->getTeams() as $team) {
+            $team->getProjects()->removeElement($project);
+        }
+        $project->getTeams()->clear();
+
         $this->em->remove($project);
         $this->em->flush();
 
