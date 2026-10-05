@@ -104,7 +104,21 @@ class Person
 
     public function setTeam(?Team $team): static
     {
+        if ($this->team === $team) {
+            return $this;
+        }
+
+        $oldTeam = $this->team;
         $this->team = $team;
+
+        if ($oldTeam !== null && $oldTeam->getMembers()->contains($this)) {
+            $oldTeam->getMembers()->removeElement($this);
+        }
+
+        if ($team !== null && !$team->getMembers()->contains($this)) {
+            $team->getMembers()->add($this);
+        }
+
         return $this;
     }
 
@@ -154,13 +168,13 @@ class Person
         ];
 
         if ($includeRelations) {
-            $data['projects'] = $this->projects->map(fn(Project $p) => [
+            $data['projects'] = array_values($this->projects->map(fn(Project $p) => [
                 'id' => $p->getId(),
                 'name' => $p->getName(),
                 'status' => $p->getStatus(),
                 'startDate' => $p->getStartDate()?->format('Y-m-d'),
                 'endDate' => $p->getEndDate()?->format('Y-m-d'),
-            ])->toArray();
+            ])->toArray());
         }
 
         return $data;

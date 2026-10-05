@@ -152,18 +152,18 @@ class Team
         ];
 
         if ($includeRelations) {
-            $data['members'] = $this->members->map(fn(Person $p) => [
+            $data['members'] = array_values($this->members->map(fn(Person $p) => [
                 'id' => $p->getId(),
                 'name' => $p->getName(),
                 'email' => $p->getEmail(),
                 'role' => $p->getRole(),
-            ])->toArray();
+            ])->toArray());
 
-            $data['projects'] = $this->projects->map(fn(Project $p) => [
+            $data['projects'] = array_values($this->projects->map(fn(Project $p) => [
                 'id' => $p->getId(),
                 'name' => $p->getName(),
                 'status' => $p->getStatus(),
-            ])->toArray();
+            ])->toArray());
         }
 
         return $data;

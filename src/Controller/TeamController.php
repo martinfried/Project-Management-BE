@@ -225,15 +225,15 @@ class TeamController extends BaseApiController
 
     private function syncMembers(Team $team, array $memberIds): void
     {
-        foreach ($team->getMembers() as $existingMember) {
+        foreach ($team->getMembers()->toArray() as $existingMember) {
             if (!in_array($existingMember->getId(), $memberIds, true)) {
-                $existingMember->setTeam(null);
+                $team->removeMember($existingMember);
             }
         }
         foreach ($memberIds as $memberId) {
             $person = $this->personRepository->find($memberId);
             if ($person) {
-                $person->setTeam($team);
+                $team->addMember($person);
             }
         }
     }
