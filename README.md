@@ -1,20 +1,36 @@
 # Backend – Evidence projektů a členů týmů
 
-Tento projekt představuje backendovou část fullstack aplikace pro evidenci projektů, lidí a týmů. Je navržen jako REST API v PHP na frameworku Symfony. Pro práci s daty a objektově-relační mapování využívá Doctrine ORM a jako storage slouží SQLite, což umožňuje jednoduché a rychlé spuštění bez nutnosti konfigurovat externí databázový server.
+Tento projekt představuje backendovou část fullstack aplikace pro evidenci projektů, lidí a týmů. Poskytuje **REST API s podporou CRUD operací nad projekty, osobami a týmy**. Aplikace je postavena v PHP na frameworku Symfony, pro práci s daty a objektově-relační mapování využívá Doctrine ORM a jako storage slouží SQLite, což umožňuje jednoduché a rychlé spuštění bez nutnosti konfigurovat externí databázový server.
 
 ---
 
 ## Přehled systému a architektura
 
-Systém slouží k přehledné evidenci projektů, lidí a jejich zařazení do týmů. Celá doména je rozdělena do tří hlavních entit: projekty, osoby a týmy.
+Systém slouží k přehledné evidenci projektů, lidí a jejich zařazení do týmů. Na straně backendu se provádí **základní validace vstupů**, řeší se **ošetření chybových stavů** a standardní **návratové HTTP kódy**. Celá doména je rozdělena do tří hlavních entit: projekty, osoby a týmy.
 
 ### Funkcionalita a business logika
 
-- **Projekty**: Eviduje se název, popis, stav `Planned`, `In Progress`, `Completed`, `On Hold` a termíny – start date i volitelný end date. Validace hlídá, aby datum zahájení nebylo v minulosti a end date nebyl před start datem.
-- **Osoby**: U každého člověka se ukládá jméno, unikátní e-mail a pracovní role jako developer, analytik nebo manažer. Každá osoba může patřit maximálně do jednoho týmu a zároveň mít přímé přiřazení k více projektům.
+- **Projekty**: Eviduje se název, popis, stav (`Planned`, `In Progress`, `Completed`, `On Hold`) a termíny – datum zahájení i volitelné datum dokončení. Validace při vytváření hlídá, aby datum zahájení nebylo v minulosti, a v obou případech kontroluje, aby datum dokončení nepředcházelo datu zahájení (při editaci je historické datum zahájení povoleno).
+- **Osoby**: U každého člověka se ukládá jméno, unikátní e-mail a pracovní role (developer, analytik, manažer apod.). Každá osoba může patřit maximálně do jednoho týmu a zároveň mít přímé přiřazení k více projektům.
 - **Správa týmů**: Zahrnuje koncept pracovních týmů. Vztah mezi osobou a týmem je 1:N a celé týmy se pak propojují s projekty přes M:N vazbu.
 - **Agregace účastníků**: V detailu projektu je implementováno automatické skládání celkového seznamu účastníků. Logika projde přímo přiřazené lidi i členy přiřazených týmů, odstraní duplicity a u každého označí source – direct, team nebo both.
 - **Integrita dat a mazání**: Při smazání projektu se vyčistí jen záznamy ve vazebních tabulkách, samotné osoby ani týmy se nemažou. Pokud se smaže tým, jeho členům se nastaví vazba na `NULL` přes `ON DELETE SET NULL`. Při smazání osoby se bezpečně uklidí její vazby na projekty i členství v týmu.
+
+### Validace vstupů a návratové HTTP kódy
+
+Na straně backendu je implementována důsledná validace příchozích dat i jednotné ošetření chybových stavů:
+
+1. **Validace vstupů**:
+   - Využívá Symfony Validator s validačními atributy (`#[Assert\NotBlank]`, `#[Assert\Email]`, `#[Assert\Choice]`, `#[Assert\Length]`) přímo na entitách i vlastní validační callbacky (`#[Assert\Callback]`).
+   - Kontrolují se povinná pole (název projektu, jméno, e-mail, role), formát a unikátnost e-mailu (včetně zamezení duplicity v databázi), povolené stavy projektů a časové relace termínů (při zakládání projektu nesmí být datum zahájení v minulosti a datum ukončení nesmí předcházet datu zahájení).
+
+2. **Návratové HTTP kódy**:
+   - `200 OK`: Úspěšné načtení dat (`GET`), úprava existujícího záznamu (`PUT`) nebo smazání entity (`DELETE`).
+   - `201 Created`: Úspěšné vytvoření nového projektu, osoby nebo týmu (`POST`) – response vrací nově vytvořenou entitu včetně vygenerovaného ID.
+   - `400 Bad Request`: Nevalidní vstupní JSON payload nebo neprošlá validace – response vrací strukturovaný JSON s mapou nevalidních polí a chybových hlášek (`{"success": false, "errors": {"field": "message"}}`).
+   - `404 Not Found`: Požadovaný záznam podle ID v databázi neexistuje (`{"success": false, "message": "Resource not found"}`).
+   - `409 Conflict`: Konflikt v datech, např. pokus o vytvoření či úpravu osoby s e-mailem, který již v systému existuje.
+   - `500 Internal Server Error`: Neočekávaná výjimka na straně serveru.
 
 ---
 
