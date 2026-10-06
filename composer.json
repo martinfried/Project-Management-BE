@@ -1,5 +1,6 @@
 {
   "name": "app/project-management-backend",
+  "version": "1.1.0",
   "description": "Project & Team Management REST API Backend built with Symfony and SQLite",
   "type": "project",
   "license": "proprietary",
