@@ -139,7 +139,7 @@ cd backend
 docker compose up --build
 ```
 
-Kontejner při startu sám checkne, jestli databáze existuje. Pokud ne, vytvoří schéma tabulek a automaticky je naseeduje testovacími daty.
+Kontejner při startu automaticky ověří existenci databáze. Pokud databáze ještě neexistuje, vytvoří schéma tabulek a naplní je výchozími testovacími daty.
 
 Běžící API a dokumentace jsou dostupné na:
 
