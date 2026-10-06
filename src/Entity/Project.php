@@ -146,14 +146,6 @@ class Project
         return $this;
     }
 
-    private ?\DateTimeInterface $originalStartDate = null;
-
-    #[ORM\PostLoad]
-    public function onPostLoad(): void
-    {
-        $this->originalStartDate = $this->startDate ? clone $this->startDate : null;
-    }
-
     #[Assert\Callback]
     public function validateDates(ExecutionContextInterface $context): void
     {
@@ -161,17 +153,21 @@ class Project
         $startStr = $this->startDate?->format('Y-m-d');
         $endStr = $this->endDate?->format('Y-m-d');
 
-        $isNewStartDate = $this->originalStartDate === null
-            || ($startStr !== null && $startStr !== $this->originalStartDate->format('Y-m-d'));
-
-        // Start date cannot be in the past for new projects or when modifying start date
-        if ($startStr !== null && $isNewStartDate && $startStr < $todayStr) {
+        // When creating a new project ($this->id === null), start date must be today or in the future
+        if ($this->id === null && $startStr !== null && $startStr < $todayStr) {
             $context->buildViolation('Start date cannot be in the past')
                 ->atPath('startDate')
                 ->addViolation();
         }
 
-        // End date cannot be before start date
+        // When creating a new project with no start date, end date cannot be in the past
+        if ($this->id === null && $startStr === null && $endStr !== null && $endStr < $todayStr) {
+            $context->buildViolation('End date cannot be in the past')
+                ->atPath('endDate')
+                ->addViolation();
+        }
+
+        // Both when creating and editing: end date cannot be before start date
         if ($startStr !== null && $endStr !== null && $endStr < $startStr) {
             $context->buildViolation('End date cannot be earlier than start date')
                 ->atPath('endDate')
