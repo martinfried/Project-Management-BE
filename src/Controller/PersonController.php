@@ -6,6 +6,7 @@ use App\Entity\Person;
 use App\Repository\PersonRepository;
 use App\Repository\ProjectRepository;
 use App\Repository\TeamRepository;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -125,6 +126,16 @@ class PersonController extends BaseApiController
         $person = new Person();
         $this->mapPayloadToPerson($person, $payload);
 
+        if ($person->getEmail()) {
+            $existing = $this->personRepository->findOneBy(['email' => $person->getEmail()]);
+            if ($existing) {
+                return $this->json([
+                    'success' => false,
+                    'errors' => ['email' => 'Email address already exists'],
+                ], Response::HTTP_BAD_REQUEST);
+            }
+        }
+
         if ($validationError = $this->validateEntity($person)) {
             return $validationError;
         }
@@ -133,8 +144,15 @@ class PersonController extends BaseApiController
             $this->syncProjects($person, $payload['projectIds']);
         }
 
-        $this->em->persist($person);
-        $this->em->flush();
+        try {
+            $this->em->persist($person);
+            $this->em->flush();
+        } catch (UniqueConstraintViolationException) {
+            return $this->json([
+                'success' => false,
+                'errors' => ['email' => 'Email address already exists'],
+            ], Response::HTTP_BAD_REQUEST);
+        }
 
         return $this->successResponse(
             $person->toArray(true),
@@ -171,6 +189,16 @@ class PersonController extends BaseApiController
         $payload = $this->getPayload($request);
         $this->mapPayloadToPerson($person, $payload);
 
+        if ($person->getEmail()) {
+            $existing = $this->personRepository->findOneBy(['email' => $person->getEmail()]);
+            if ($existing && $existing->getId() !== $person->getId()) {
+                return $this->json([
+                    'success' => false,
+                    'errors' => ['email' => 'Email address already exists'],
+                ], Response::HTTP_BAD_REQUEST);
+            }
+        }
+
         if ($validationError = $this->validateEntity($person)) {
             return $validationError;
         }
@@ -179,7 +207,14 @@ class PersonController extends BaseApiController
             $this->syncProjects($person, $payload['projectIds']);
         }
 
-        $this->em->flush();
+        try {
+            $this->em->flush();
+        } catch (UniqueConstraintViolationException) {
+            return $this->json([
+                'success' => false,
+                'errors' => ['email' => 'Email address already exists'],
+            ], Response::HTTP_BAD_REQUEST);
+        }
 
         return $this->successResponse(
             $person->toArray(true),

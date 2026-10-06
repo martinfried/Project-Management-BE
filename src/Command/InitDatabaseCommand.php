@@ -37,6 +37,21 @@ class InitDatabaseCommand extends Command
         $io = new SymfonyStyle($input, $output);
         $io->title('Database Initialization');
 
+        $force = (bool) $input->getOption('force');
+        if ($force) {
+            $conn = $this->em->getConnection();
+            try {
+                $conn->executeStatement('DELETE FROM project_person');
+                $conn->executeStatement('DELETE FROM project_team');
+                $conn->executeStatement('DELETE FROM projects');
+                $conn->executeStatement('DELETE FROM persons');
+                $conn->executeStatement('DELETE FROM teams');
+                $conn->executeStatement("DELETE FROM sqlite_sequence WHERE name IN ('projects', 'persons', 'teams')");
+            } catch (\Throwable) {
+                // In case tables do not exist yet
+            }
+        }
+
         $metadata = $this->em->getMetadataFactory()->getAllMetadata();
         $schemaTool = new SchemaTool($this->em);
 
@@ -44,7 +59,6 @@ class InitDatabaseCommand extends Command
         $io->success('Database schema has been created / updated.');
 
         if ($input->getOption('seed')) {
-            $force = (bool) $input->getOption('force');
             $this->seedSampleData($force);
             $io->success('Sample data has been seeded successfully.');
         }
