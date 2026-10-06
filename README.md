@@ -105,25 +105,24 @@ erDiagram
 
 ```
 backend/
-├── bin/console                  # Symfony konzole
-├── config/                      # Konfigurace balíčků a services
-├── public/index.php             # Entrypoint aplikace
+├── bin/console                      # Symfony konzole
+├── config/                          # Konfigurace balíčků a services
+├── public/index.php                 # Entrypoint aplikace
 ├── src/
 │   ├── Command/
-│   │   └── AppInitDbCommand.php # CLI command app:init-db pro sestavení schématu a seed dat
+│   │   └── InitDatabaseCommand.php  # CLI command app:init-db pro sestavení schématu a seed dat
 │   ├── Controller/
-│   │   ├── BaseApiController.php# Společný controller s helpery pro JSON response a validace
-│   │   ├── ProjectController.php# API endpointy pro projekty a přiřazování účastníků
-│   │   ├── PersonController.php # API endpointy pro správu osob a vazeb
-│   │   ├── TeamController.php   # API endpointy pro týmy a členy
-│   │   ├── DatabaseController.php# Endpoint pro reset a re-seed DB přes HTTP
-│   │   └── HealthController.php # Healthcheck endpoint
-│   ├── Entity/                  # Doctrine entity Project, Person, Team
-│   ├── Repository/              # Repozitáře pro optimalizované databázové queries
-│   └── Kernel.php               # Symfony Kernel
-├── Dockerfile                   # Dockerfile pro backend image
-├── docker-compose.yml           # Compose konfigurace pro lokální dev
-└── docker-entrypoint.sh         # Entrypoint skript s automatickou inicializací DB
+│   │   ├── BaseApiController.php    # Společný controller s helpery pro JSON response a validace
+│   │   ├── DatabaseController.php   # Healthcheck a endpoint pro reset a re-seed DB
+│   │   ├── PersonController.php     # API endpointy pro správu osob a vazeb
+│   │   ├── ProjectController.php    # API endpointy pro projekty a přiřazování účastníků
+│   │   └── TeamController.php       # API endpointy pro týmy a členy
+│   ├── Entity/                      # Doctrine entity Project, Person, Team
+│   ├── Repository/                  # Repozitáře pro optimalizované databázové queries
+│   └── Kernel.php                   # Symfony Kernel
+├── Dockerfile                       # Dockerfile pro backend image
+├── docker-compose.yml               # Compose konfigurace pro lokální dev
+└── docker-entrypoint.sh             # Entrypoint skript s automatickou inicializací DB
 ```
 
 ---
