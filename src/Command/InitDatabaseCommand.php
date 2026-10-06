@@ -37,54 +37,54 @@ class InitDatabaseCommand extends Command
         $io = new SymfonyStyle($input, $output);
         $io->title('Database Initialization');
 
+        $seed = (bool) $input->getOption('seed');
         $force = (bool) $input->getOption('force');
-        if ($force) {
-            $conn = $this->em->getConnection();
-            try {
-                $conn->executeStatement('DELETE FROM project_person');
-                $conn->executeStatement('DELETE FROM project_team');
-                $conn->executeStatement('DELETE FROM projects');
-                $conn->executeStatement('DELETE FROM persons');
-                $conn->executeStatement('DELETE FROM teams');
-                $conn->executeStatement("DELETE FROM sqlite_sequence WHERE name IN ('projects', 'persons', 'teams')");
-            } catch (\Throwable) {
-                // In case tables do not exist yet
-            }
-        }
 
-        $metadata = $this->em->getMetadataFactory()->getAllMetadata();
-        $schemaTool = new SchemaTool($this->em);
+        $this->initializeDatabase($seed, $force);
 
-        $schemaTool->updateSchema($metadata);
         $io->success('Database schema has been created / updated.');
-
-        if ($input->getOption('seed')) {
-            $this->seedSampleData($force);
+        if ($seed) {
             $io->success('Sample data has been seeded successfully.');
         }
 
         return Command::SUCCESS;
     }
 
-    public function seedSampleData(bool $force = false): void
+    public function purgeTables(): void
+    {
+        $conn = $this->em->getConnection();
+        try {
+            $conn->executeStatement('DELETE FROM project_person');
+            $conn->executeStatement('DELETE FROM project_team');
+            $conn->executeStatement('DELETE FROM projects');
+            $conn->executeStatement('DELETE FROM persons');
+            $conn->executeStatement('DELETE FROM teams');
+            $conn->executeStatement("DELETE FROM sqlite_sequence WHERE name IN ('projects', 'persons', 'teams')");
+        } catch (\Throwable) {
+            // Tables might not exist yet
+        }
+    }
+
+    public function initializeDatabase(bool $seed = true, bool $force = false): void
     {
         if ($force) {
-            $conn = $this->em->getConnection();
-            try {
-                $conn->executeStatement('DELETE FROM project_person');
-                $conn->executeStatement('DELETE FROM project_team');
-                $conn->executeStatement('DELETE FROM projects');
-                $conn->executeStatement('DELETE FROM persons');
-                $conn->executeStatement('DELETE FROM teams');
-                $conn->executeStatement("DELETE FROM sqlite_sequence WHERE name IN ('projects', 'persons', 'teams')");
-            } catch (\Throwable) {
-                // In case tables or sqlite_sequence do not exist yet
-            }
-        } else {
-            $existingProjects = $this->em->getRepository(Project::class)->findAll();
-            if (count($existingProjects) > 0) {
-                return;
-            }
+            $this->purgeTables();
+        }
+
+        $metadata = $this->em->getMetadataFactory()->getAllMetadata();
+        $schemaTool = new SchemaTool($this->em);
+        $schemaTool->updateSchema($metadata);
+
+        if ($seed) {
+            $this->seedSampleData();
+        }
+    }
+
+    public function seedSampleData(): void
+    {
+        $existingProjects = $this->em->getRepository(Project::class)->findAll();
+        if (count($existingProjects) > 0) {
+            return;
         }
 
         // 1. Create Teams

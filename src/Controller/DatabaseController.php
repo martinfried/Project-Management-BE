@@ -74,23 +74,7 @@ class DatabaseController extends AbstractController
     public function init(): JsonResponse
     {
         try {
-            $conn = $this->em->getConnection();
-            try {
-                $conn->executeStatement('DELETE FROM project_person');
-                $conn->executeStatement('DELETE FROM project_team');
-                $conn->executeStatement('DELETE FROM projects');
-                $conn->executeStatement('DELETE FROM persons');
-                $conn->executeStatement('DELETE FROM teams');
-                $conn->executeStatement("DELETE FROM sqlite_sequence WHERE name IN ('projects', 'persons', 'teams')");
-            } catch (\Throwable) {
-                // Tables might not exist yet
-            }
-
-            $metadata = $this->em->getMetadataFactory()->getAllMetadata();
-            $schemaTool = new SchemaTool($this->em);
-            $schemaTool->updateSchema($metadata);
-
-            $this->initDatabaseCommand->seedSampleData(false);
+            $this->initDatabaseCommand->initializeDatabase(seed: true, force: true);
 
             return $this->json([
                 'success' => true,
